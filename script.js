@@ -159,6 +159,17 @@
         gradeBtns.forEach(btn => {
             btn.addEventListener('click', () => {
                 state.inclinePercent = parseInt(btn.dataset.grade, 10);
+                const slider = document.getElementById('regenBrakeSlider');
+                if (slider) {
+                    if (state.inclinePercent < 0) {
+                        slider.value = 0;
+                        slider.disabled = true;
+                        brakeSliderLevel = 0;
+                        const bt = document.getElementById('brakeLevelText'); if (bt) bt.textContent = '0%';
+                    } else {
+                        slider.disabled = false;
+                    }
+                }
                 gradeBtns.forEach(b => {
                     const active = parseInt(b.dataset.grade, 10) === state.inclinePercent;
                     if (active) {
@@ -489,9 +500,8 @@
                         const regenDrag = (state.wheelAngularVel - 16) * 1.6;
                         state.wheelAngularVel -= regenDrag * dt;
                     }
-                    if (state.wheelAngularVel > 1.0) {
-                        state.wattsHubRegen = Math.min(320, state.wheelAngularVel * 14);
-                    }
+                    // Regen braking disabled on downhill (manual brake only)
+                    state.wattsHubRegen = 0;
                     state.motorState = state.wattsPedalGen > 5 ? 'Dual Regen + Pedal' : 'Downhill Regen';
                 } else {
                     // FLAT OR UPHILL: Motor drives wheel if rider is pedaling and battery > 0%
