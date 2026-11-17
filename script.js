@@ -426,8 +426,8 @@
             const cutoff = performance.now() - 30000;
             while (state.telemetryLog.length && state.telemetryLog[0].t < cutoff) state.telemetryLog.shift();
 
-            // Auto-pedal demo mode if toggled
-            if (state.autoPedal && !state.isDraggingPedal) {
+            // Auto-pedal demo mode if toggled (paused while braking)
+            if (state.autoPedal && !state.isDraggingPedal && !state.isBraking && brakeSliderLevel <= 0) {
                 const targetAutoVel = 6.8; // ~65 RPM
                 state.crankAngularVel += (targetAutoVel - state.crankAngularVel) * 5 * dt;
                 state.crankAngle += state.crankAngularVel * dt;
