@@ -259,6 +259,7 @@
             params.set('gear', state.gear);
             params.set('grade', state.inclinePercent);
             params.set('soc', state.batterySOC.toFixed(1));
+            params.set('auto', state.autoPedal ? '1' : '0');
             const url = window.location.pathname + '?' + params.toString();
             window.history.replaceState({}, '', url);
         }
@@ -269,6 +270,7 @@
             if (params.has('gear')) state.gear = parseInt(params.get('gear'), 10);
             if (params.has('grade')) state.inclinePercent = parseInt(params.get('grade'), 10);
             if (params.has('soc')) state.batterySOC = parseFloat(params.get('soc'));
+            if (params.has('auto')) state.autoPedal = params.get('auto') === '1';
         })();
         // sync periodically
         setInterval(syncUrl, 2000);
