@@ -217,24 +217,7 @@
         });
 
         // Presets, URL state, CSV, chain slip, tour
-        function capturePreset() {
-            return { mode: state.mode, gear: state.gear, incline: state.inclinePercent, soc: state.batterySOC, autoPedal: state.autoPedal };
-        }
-        function applyPreset(p) {
-            if (!p) return;
-            state.mode = p.mode; state.gear = p.gear; state.inclinePercent = p.incline; state.batterySOC = p.soc; state.autoPedal = p.autoPedal;
-            // reflect in UI
-            const mb = document.querySelector('.mode-btn[data-mode="' + p.mode + '"]'); if (mb) mb.click();
-            const gb = document.querySelector('.gear-btn[data-gear="' + p.gear + '"]'); if (gb) gb.click();
-            const gr = document.querySelector('.grade-btn[data-grade="' + p.incline + '"]'); if (gr) gr.click();
-        }
-        for (let i = 1; i <= 3; i++) {
-            const saveBtn = document.getElementById('presetSave' + i);
-            const loadBtn = document.getElementById('presetLoad' + i);
-            if (saveBtn) saveBtn.addEventListener('click', () => { localStorage.setItem('preset' + i, JSON.stringify(capturePreset())); saveBtn.textContent = 'Saved ' + i; setTimeout(() => saveBtn.textContent = 'Save ' + i, 800); });
-            if (loadBtn) loadBtn.addEventListener('click', () => { const raw = localStorage.getItem('preset' + i); if (raw) applyPreset(JSON.parse(raw)); });
-        }
-        // Shareable URL state
+        // Shareable URL state:
         function syncUrl() {
             const params = new URLSearchParams();
             params.set('mode', state.mode);
