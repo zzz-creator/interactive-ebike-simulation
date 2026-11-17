@@ -1312,6 +1312,13 @@
 
         window.onload = function () {
             resizeCanvas();
-            setDriveMode('hybrid');
+            // Sync UI to state loaded from URL
+            const mb = document.querySelector('.mode-btn[data-mode="' + state.mode + '"]');
+            if (mb) mb.click();
+            const gb = document.querySelector('.gear-btn[data-gear="' + state.gear + '"]');
+            if (gb) gb.click();
+            const gr = document.querySelector('.grade-btn[data-grade="' + state.inclinePercent + '"]');
+            if (gr) gr.click();
+            setDriveMode(state.mode);
             requestAnimationFrame(animate);
         };
