@@ -197,6 +197,29 @@
             });
         });
 
+        // Manual Grade Slider
+        const gradeSlider = document.getElementById('gradeSlider');
+        const gradeSliderText = document.getElementById('gradeSliderText');
+        if (gradeSlider) {
+            gradeSlider.addEventListener('input', () => {
+                const g = parseInt(gradeSlider.value, 10);
+                state.inclinePercent = g;
+                if (gradeSliderText) gradeSliderText.textContent = (g > 0 ? '+' : '') + g + '%';
+                // update badge/label
+                if (g > 0) { gradeBadge.textContent = `+${g}% UPHILL`; gradeBadge.className = 'mono text-[11px] font-bold text-amber-400'; inclineLabel.textContent = `Grade: +${g}% (Uphill)`; }
+                else if (g < 0) { gradeBadge.textContent = `${g}% DOWNHILL`; gradeBadge.className = 'mono text-[11px] font-bold text-emerald-400'; inclineLabel.textContent = `Grade: ${g}% (Downhill)`; }
+                else { gradeBadge.textContent = `0% FLAT`; gradeBadge.className = 'mono text-[11px] font-bold text-slate-300'; inclineLabel.textContent = `Grade: 0% (Flat)`; }
+                // slider disable on downhill for regen brake
+                const rSlider = document.getElementById('regenBrakeSlider');
+                if (rSlider) {
+                    if (g < 0) { rSlider.value = 0; rSlider.disabled = true; brakeSliderLevel = 0; const bt = document.getElementById('brakeLevelText'); if (bt) bt.textContent = '0%'; }
+                    else { rSlider.disabled = false; }
+                }
+                // clear active preset buttons
+                gradeBtns.forEach(b => b.classList.remove('active','bg-sky-500/20','border-sky-400','text-sky-200'));
+            });
+        }
+
         // Regen Brake Slider (0-100%) + Hold Button
         const regenBrakeSlider = document.getElementById('regenBrakeSlider');
         const regenBrakeBtn = document.getElementById('regenBrakeBtn');
