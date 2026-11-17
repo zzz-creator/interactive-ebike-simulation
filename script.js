@@ -1347,5 +1347,14 @@
             const gSlider = document.getElementById('gradeSlider');
             if (gSlider) { gSlider.value = state.inclinePercent; const gt = document.getElementById('gradeSliderText'); if (gt) gt.textContent = (state.inclinePercent > 0 ? '+' : '') + state.inclinePercent + '%'; }
             setDriveMode(state.mode);
+            // sync auto-pedal button UI
+            if (state.autoPedal) {
+                const icon = document.getElementById('autoPedalIcon');
+                const label = document.getElementById('autoPedalLabel');
+                const btn = document.getElementById('autoPedalBtn');
+                if (icon) icon.className = 'fa-solid fa-pause text-amber-400';
+                if (label) label.textContent = 'Stop Auto-Pedal';
+                if (btn) btn.classList.add('border-amber-500/60', 'text-amber-200');
+            }
             requestAnimationFrame(animate);
         };
