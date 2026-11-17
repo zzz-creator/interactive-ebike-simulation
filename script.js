@@ -59,6 +59,7 @@
             // Energy Flow Particles
             particles: [],
             particleSpawnTimer: 0,
+            brakeFactor: 0,
 
             // Extras
             chainSlip: false,
@@ -427,7 +428,7 @@
             while (state.telemetryLog.length && state.telemetryLog[0].t < cutoff) state.telemetryLog.shift();
 
             // Auto-pedal demo mode if toggled (paused while braking)
-            if (state.autoPedal && !state.isDraggingPedal && !state.isBraking && brakeSliderLevel <= 0) {
+            if (state.autoPedal && !state.isDraggingPedal && state.brakeFactor <= 0.01) {
                 const targetAutoVel = 6.8; // ~65 RPM
                 state.crankAngularVel += (targetAutoVel - state.crankAngularVel) * 5 * dt;
                 state.crankAngle += state.crankAngularVel * dt;
@@ -466,13 +467,19 @@
                 const hasBattery = state.batterySOC > 0.2;
 
                 // 3. Rear Hub Motor / Dynamo Logic
-                const brakeActive = state.isBraking || brakeSliderLevel > 0;
-                const brakeForceScale = state.isBraking ? 1.0 : brakeSliderLevel;
+                const targetBrakeLevel = state.isBraking ? 1.0 : brakeSliderLevel;
+                state.brakeFactor += (targetBrakeLevel - state.brakeFactor) * 10 * dt;
+                if (state.brakeFactor < 0) state.brakeFactor = 0;
+                if (state.brakeFactor > 1) state.brakeFactor = 1;
+                const brakeActive = state.brakeFactor > 0.01;
+                const brakeForceScale = state.brakeFactor * (state.isBraking ? 1.0 : 1.0);
+                // scale by slider level when not full hold
+                const effectiveScale = state.isBraking ? state.brakeFactor : state.brakeFactor * brakeSliderLevel;
                 if (brakeActive && state.wheelAngularVel > 0.3) {
                     // "NEW FORCE" REGENERATIVE BRAKING
-                    const regenForce = 24.0 * brakeForceScale;
+                    const regenForce = 24.0 * effectiveScale;
                     state.wheelAngularVel = Math.max(0, state.wheelAngularVel - regenForce * dt);
-                    state.wattsHubRegen = Math.min(480, state.wheelAngularVel * 22 * brakeForceScale);
+                    state.wattsHubRegen = Math.min(480, state.wheelAngularVel * 22 * effectiveScale);
                     state.motorState = 'Regen Braking';
                 } else if (state.inclinePercent < 0) {
                     // DOWNHILL: Gravity spins wheel; hub dynamo harvests rotational energy AND combines with pedaling!
