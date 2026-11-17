@@ -1,0 +1,153 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><title>Council Report — What should we add?</title>
+<style>
+body{font-family:system-ui,sans-serif;max-width:980px;margin:2rem auto;padding:0 1rem;line-height:1.6;color:#111}
+h1{font-size:1.7rem}h2{margin-top:1.6rem;border-bottom:1px solid #ddd;padding-bottom:.3rem}
+details{margin:.6rem 0;border:1px solid #e5e5e5;border-radius:8px;padding:.6rem 1rem;background:#fafafa}
+summary{cursor:pointer;font-weight:600}
+.advisor{margin:.8rem 0;padding:.6rem;border-left:3px solid #3b82f6;background:#f8fafc}
+.peer{margin:.8rem 0;padding:.6rem;border-left:3px solid #f59e0b;background:#fffbeb}
+.verdict{background:#f0fdf4;border:1px solid #86efac;padding:1rem;border-radius:8px}
+ul,ol{margin:.4rem 0 .4rem 1.4rem}
+</style></head><body>
+<h1>Council Report — What should we add?</h1>
+<p><strong>Question:</strong> Interactive e-bike drivetrain &amp; regenerative braking HTML sim. "What should we add?"</p>
+<p><strong>Seated:</strong> Core five (Contrarian, First Principles, Expansionist, Outsider, Executor) + panel (Innovator, Pragmatist, Risk Assessor, Strategist).</p>
+
+<h2>Chairman's Verdict</h2>
+<div class="verdict">
+<h3>Where the Council Agrees</h3>
+<ul>
+<li>The fatal defect is real and unanimous: regenerative braking is advertised as the lab's headline, yet the hold-to-brake control was just removed and <code>state.isBraking</code> has no UI toggle. Every advisor converged on this; Outsider and Executor quantified it at ~30 lines. Fixing this is non-negotiable before anything else.</li>
+<li>Avoid list consistent: no 3D, no accounts/backend/multiplayer, no gamification beyond simple scoring, no extra gears/visual polish, no audio (majority), no more controls without removing others. Cognitive load is the binding constraint.</li>
+<li>Quantitative readouts are table stakes: watts in/out, Wh recovered, efficiency %, and a conservation overlay. The sim must change what a learner concludes, not just what they see.</li>
+<li>Shareable URL state + localStorage presets universally endorsed (Executor, Pragmatist, Strategist) as the highest-leverage distribution move.</li>
+<li>The app has no failure containment: single-file canvas, rAF loop dies silently. Risk Assessor's error boundary + numeric guards agreed necessary.</li>
+<li>Model correctness is unvalidated — surfaced in peer review by all five reviewers. Nobody has checked the drivetrain/regen numbers against real e-bike specs.</li>
+</ul>
+<h3>Where the Council Clashes</h3>
+<ul>
+<li>Monetization vs. pedagogy: Expansionist wants GPX importer and fleet TCO calculator as a monetizable wedge now; Contrarian, First Principles, and every peer reviewer flagged building a revenue layer on an unvalidated physics model. Council does not support shipping monetization before the core teaches correctly.</li>
+<li>Scope ordering: Executor wants exactly three tightly scoped ship items (brake lever, battery clamp, URL state); Risk Assessor wants reliability/a11y hardening first; Pragmatist wants URL state → presets → keyboard → tour → CSV → reduced-motion. Differ on whether to ship features or harden first.</li>
+<li>Audio: Outsider and Innovator want Web Audio motor whine/regen hum; Contrarian and Executor explicitly skip it. Split verdict — defer unless trivial and behind a toggle.</li>
+<li>More physics modes: First Principles and Innovator want thermal derating, failure states (BMS cutoff, regen at full charge), cold-soak; Strategist says don't add more physics modes, the moat is distribution. Resolution: add failure-mode states (they teach), not new physics modes (they don't).</li>
+</ul>
+<h3>Blind Spots the Council Caught</h3>
+<ul>
+<li>Physics model validation — no one checked drivetrain/regen numbers against real measurements; no calibration, no documented assumptions.</li>
+<li>Instructor/educator workflow — presets, reset, guided tour, embeddable widget mode, "does it teach" evaluation criteria.</li>
+<li>Accessibility — colorblind-safe palette, reduced-motion, keyboard parity, ARIA live region for motor state, touch parity.</li>
+<li>Mobile/touch responsiveness and viewport fit on small screens.</li>
+<li>README/assumptions documentation and unit localization (metric/imperial).</li>
+<li>Concrete acceptance test / baseline metric — no one defined "done" or how to measure teaching efficacy.</li>
+<li>Scope-risk ranking — which additions risk breaking the single-file architecture.</li>
+<li>rAF failure containment — silent crash with no recovery or user feedback.</li>
+</ul>
+<h3>The Recommendation</h3>
+<ol>
+<li><strong>Restore the regen brake control</strong> — hold-to-brake button + 0–100% slider + Space key, wired to existing <code>state.isBraking</code>/<code>regenForce</code>. ~30 lines. Unblocks the entire lab.</li>
+<li>Quantitative readouts + conservation overlay — watts in/out, Wh recovered, efficiency %, energy-budget ledger. Makes it a lab, not an animation.</li>
+<li>Failure-mode states — BMS cutoff, regen zeroed at full charge ("BATTERY FULL"), chain slip. ~5 lines for the overcharge guard alone.</li>
+<li>Shareable URL state + 3 localStorage presets — distribution foundation.</li>
+<li>Error boundary + numeric guards — try/catch around <code>updatePhysics</code>/<code>drawBike</code>, visible "simulation paused" banner, rAF restart, clamped angular velocity, min dt floor, SOC persisted to localStorage.</li>
+<li>Accessibility pass — keyboard controls, ARIA live region, reduced-motion respect, touch parity.</li>
+<li>Validate the physics model against real e-bike specs and document assumptions in a README before any expansion or monetization.</li>
+</ol>
+<p><strong>Explicitly avoid:</strong> 3D, audio (unless trivially toggleable), accounts/backend, multiplayer, GPX/fleet TCO until core is validated, more gears, visual polish, gamification beyond simple scoring, and any feature that doesn't change a student's conclusion.</p>
+<h3>The One Thing to Do First</h3>
+<p><strong>Restore the regen brake control</strong> — a hold-to-brake button plus a 0–100% slider and Space-key binding, wired to the already-present <code>state.isBraking</code> and <code>regenForce</code>. The headline feature of this lab is currently unreachable; every other addition is moot until a learner can actually brake and recover energy.</p>
+</div>
+
+<h2>Advisor Responses</h2>
+<details><summary>The Contrarian</summary><div class="advisor">
+The fatal flaw is that you just removed the one interaction that makes regenerative braking *real* — the hold-to-brake button is where students actually see energy reverse direction. Without it, this is a drivetrain animation, not a regen lab. Add it back, or add a slider-controlled braking torque that shows the same reversal with a tunable parameter.<br><br>
+What to add that earns its keep: quantitative readouts (watts in/out, Wh recovered, motor efficiency at current RPM), a grade selector with real percentages (0–15%), and a side-by-side comparison mode (direct-drive vs. geared) so the chain bypass actually demonstrates something. Also add a "sanity check" overlay showing whether current energy flow violates conservation — it turns the canvas from eye candy into a verifiable instrument.<br><br>
+What to avoid: 3D rendering, audio, particle trails beyond 50 elements, gamification, leaderboards, user accounts, or any feature requiring a backend. Every one of those delays the core question students ask — "where did the energy go?" — and none of them answer it. The lab's value is pedagogical clarity, not spectacle. If a feature doesn't make the physics more legible, cut it. Also avoid adding more controls without removing others; the viewport is already full, and cognitive load is the real constraint, not screen space.
+</div></details>
+
+<details><summary>The First Principles Thinker</summary><div class="advisor">
+The real question isn't "what features are missing" — it's "what must a learner understand about this drivetrain that the current model doesn't yet make visible." The sim already teaches flow: pedal→battery, battery→motor, wheel→battery via regen. What it doesn't yet surface is *cost*: where energy is lost, how efficiency varies, and what the trade-offs actually feel like.<br><br>
+Add (high leverage): per-component efficiency readout (motor, drivetrain, regen) so students see that regen recovers only a fraction, not 100%. Thermal / current-limit indicators — real e-bikes derate; showing "motor overheating, assist reduced" teaches real constraints. A scenario mode (flat commute vs. steep climb vs. descent) with summary: Wh consumed, Wh recovered, net battery delta. Failure-mode states: battery BMS cutoff, regen disabled at full charge, chain slip. Energy-budget ledger (cumulative Wh in/out per source).<br><br>
+Avoid: 3D rendering, richer graphics, animation polish; gamification (scores, badges, sharing); more input controls without a corresponding insight; features implying precision the model doesn't have; anything requiring accounts, servers, or persistence.<br><br>
+The discipline: every addition must change what a student *concludes* about energy, not just what they *see*.
+</div></details>
+
+<details><summary>The Expansionist</summary><div class="advisor">
+The sim as-is is a physics toy. The bigger play is turning it into a decision engine for real money and real commutes.<br><br>
+Adjacent opportunities being undervalued: GPX import / real-route mode (drop actual commute GPX, see regen yield, battery SOC curve, time delta on their hills — purchase-justification tool). Fleet &amp; TCO calculator (e-bike vs car vs transit over 1/3/5 years). Battery aging model (cycle count, depth-of-discharge, temperature — makes regen tradeoff honest). Shareable "my ride" cards (PNG/URL of efficiency score). Motor/gearing sandbox (swap hub vs mid-drive).<br><br>
+Don't bother with: 3D rendering, multiplayer, accounts. The upside is in specificity of real-world application, not polish. Ship GPX importer first — it's the wedge that makes everything else monetizable.
+</div></details>
+
+<details><summary>The Outsider</summary><div class="advisor">
+From a cold read, the most glaring gap: regenerative braking is advertised everywhere (header, callout, legend) but there is no brake control in the UI. <code>state.isBraking</code> exists in JS, yet nothing in the HTML toggles it — a first-time user cannot trigger the headline feature at all. Add a prominent brake button (hold-to-brake, plus a keyboard shortcut like Space) and wire it to isBraking.<br><br>
+Other first-impression gaps: No onboarding (first-run overlay). No reset/stop (zero speed). No keyboard controls. No audio. No comparison mode (A/B view). No data export (CSV/JSON dump).<br><br>
+Prioritize the brake button — it's the feature the whole sim is named around and it's currently unreachable.
+</div></details>
+
+<details><summary>The Executor</summary><div class="advisor">
+Monday morning, ship these three, in this order:<br><br>
+1. Regen brake lever (the actual missing control). Section 3 only has grade presets — no brake input, even though physics references "New Force" regen braking. Add a 0–100% brake slider next to grade buttons that sets state.isBraking and feeds regenForce. Effort ~30 lines.<br>
+2. Battery clamp + overcharge guard. Nothing stops SOC from exceeding 100% during downhill + pedaling. Add Math.min(100, ...) and a visual "BATTERY FULL — regen disabled" state that zeros out wattsHubRegen. Effort 5 lines.<br>
+3. Persisted shareable URL. Encode grade, gear, mode, autoPedal into query params; read on load. No backend, ~20 lines.<br><br>
+Skip for now: cadence-based gear shifting animation, mobile touch polish, audio, multi-bike comparison.
+</div></details>
+
+<details><summary>The Innovator</summary><div class="advisor">
+The Innovator's picks: Regen "dead zone" + strength dial (real hubs don't regen below ~8 km/h; add regen-strength slider and low-speed cutoff). Cold-soak battery derating (temperature slider). Ghost-bike A/B overlay (second translucent bike running pure mechanical chain-drive alongside hybrid, plot cumulative Wh consumed). Energy-budget challenge mode (fixed battery + target distance, score by kWh/100km). Web Audio motor whine + regen hum. URL-state export.<br><br>
+Skip: more gears, prettier wheels, extra telemetry badges — polish, not insight.
+</div></details>
+
+<details><summary>The Pragmatist</summary><div class="advisor">
+Ship small, self-contained wins — no backend, no new deps, no framework swap.<br><br>
+High value, low effort: URL state for scenarios (~30 lines). localStorage presets (3 slots). Keyboard + touch parity. Guided 60-second tour. CSV export of telemetry. Reduced-motion + "demo mode" reset.<br><br>
+Defer: 3D/WebGL, multi-bike comparison, physics-engine swap, accounts, leaderboards. Also don't add testing framework unless splitting script.js into modules.<br><br>
+Order of attack: URL state → presets → keyboard → tour → CSV → reduced-motion. Each independently shippable in an afternoon; none blocks the others. Stop after CSV unless user research says otherwise.
+</div></details>
+
+<details><summary>The Risk Assessor</summary><div class="advisor">
+Risk: single-file canvas app with no failure containment. Pre-mortem: one bad frame or null element and the whole rAF loop dies silently. Add try/catch around updatePhysics/drawBike plus visible "simulation paused — reload" banner, and rAF restart guard.<br><br>
+Second risk: physics has no tripwires. wheelAngularVel can spike; socDelta misleading due to dt ~0 on tab-switch. Add clamps (max angular velocity, min dt floor 1/120) and guard that snaps to last-good state instead of NaN-propagating.<br><br>
+Third: no accessibility/fallback. Canvas-only means screen readers get nothing and keyboard users can't pedal. Add ARIA live region for motor state + keyboard controls.<br><br>
+Fourth: battery SOC no hysteresis — at 0.2% motor cuts hard with no warning. Add "low battery" tripwire at 10% with confirm-style modal before assist disables, persist SOC to localStorage.<br><br>
+Mitigation order: error boundary first, then numeric guards, then a11y, then persistence.
+</div></details>
+
+<details><summary>The Strategist</summary><div class="advisor">
+Strategic read: single-file demos don't compound. 2-5 year play is to make it the canonical, embeddable reference for e-bike drivetrain education.<br><br>
+Priority: 1. Shareable scenario URLs. 2. Preset challenges + scoring. 3. Embeddable widget mode (?embed=1). 4. Telemetry export (CSV + screenshot). 5. PWA/offline + mobile touch polish.<br><br>
+Don't add: more physics modes, 3D, multiplayer. Moat is distribution and habit, not fidelity.<br><br>
+The game: own "e-bike drivetrain, explained" as a search term and embed.
+</div></details>
+
+<h2>Peer Reviews</h2>
+<details><summary>Reviewer 1 (Contrarian lens)</summary><div class="peer">
+1. Strongest: E — concrete effort estimates, fixes an actual physics bug (SOC >100% with no overcharge guard), and targets the single most embarrassing defect (headline regen feature unreachable). A is close but vaguer.<br>
+2. Biggest blind spot: C — pivots to monetization (GPX, fleet TCO, shareable cards) for a teaching lab with no evidence of a market, while ignoring that the sim's named feature can't even be triggered.<br>
+3. All nine missed: model correctness validation against real e-bike telemetry; instructor affordances (lesson scaffolding, guided worksheets, "teacher mode"); colorblind-safe palettes and reduced-motion defaults beyond passing mentions.
+</div></details>
+
+<details><summary>Reviewer 2 (First Principles lens)</summary><div class="peer">
+1. Strongest: G — most complete lab-appropriate set: URL state and presets make runs reproducible/shareable, keyboard shortcuts plus tour fix onboarding, CSV export supports real analysis. Treats artifact as teaching tool.<br>
+2. Biggest blind spot: C — pivots to monetization and skips physics/pedagogy gaps. Building revenue layer on unvalidated model scales the error.<br>
+3. All nine missed: validating the model against real e-bike measurements or published efficiency curves; educator workflow (classroom presets, student submission/comparison, grading-friendly exports); ranking what to avoid by scope risk despite the question asking.
+</div></details>
+
+<details><summary>Reviewer 3 (Expansionist lens)</summary><div class="peer">
+1. Strongest: A — names a fatal correctness flaw (no brake control, so regen untestable) and pairs it with a conservation overlay — foundational physics accounting, not a feature.<br>
+2. Biggest blind spot: C — jumps to GPX import/TCO monetization before core interaction is sound; a user can't monetize a sim they can't yet operate. Missing first-run onboarding and brake control (which D/E also flagged).<br>
+3. All nine missed: whether the underlying model is physically correct or calibrated against real e-bike drivetrain data; mobile/touch usability; README/explanation of assumptions.
+</div></details>
+
+<details><summary>Reviewer 4 (Outsider lens)</summary><div class="peer">
+1. Strongest: A — calling the missing brake a fatal flaw is right; without it the sim can't demonstrate regenerative braking at all, which is its entire purpose. The conservation overlay adds the pedagogical core. E is close but frames the gap as optional; A frames it as blocking.<br>
+2. Biggest blind spot: C — jumping to GPX/TCO monetization assumes a product and user base that don't exist yet, and skips whether the sim teaches anything. Missing pedagogical validation, accessibility (only H covers it), mobile/touch, physics accuracy vs real specs.<br>
+3. All nine missed: (a) validating physics/math against real e-bike telemetry; (b) mobile/touch, reduced-motion, and color-blind accessibility for the canvas itself; (c) whether adding features beats fixing the teaching loop — no user testing or outcome metrics. Also unit localization (mph/km/h) and a baseline "does it actually teach" evaluation.
+</div></details>
+
+<details><summary>Reviewer 5 (Executor lens)</summary><div class="peer">
+1. Strongest: A — identifies the core missing interaction (brake) and adds a conservation check, which validates the sim instead of just decorating it.<br>
+2. Biggest blind spot: C — jumps to monetization/GPX before establishing audience, demand, or whether the current model is trustworthy; missing user research and success criteria.<br>
+3. All nine missed: a concrete acceptance test/baseline metric (e.g., "brake changes energy flow as expected, no NaNs, mobile usable") to decide what "better" means.
+</div></details>
+
+<p style="margin-top:2rem;color:#666;font-size:.85rem">Generated by LLM Council — 9 advisors, 5 peer reviewers, 1 chairman synthesis.</p>
+</body></html>

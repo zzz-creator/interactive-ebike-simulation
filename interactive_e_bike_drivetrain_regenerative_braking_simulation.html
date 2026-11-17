@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>E-Bike Drivetrain & Regenerative Braking Lab</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body class="h-screen flex flex-col justify-between p-2 sm:p-4 w-full gap-3 overflow-hidden">
+
+    <!-- Header & Live Physics Status Callout -->
+    <header class="bg-slate-900/90 border border-slate-800 rounded-2xl p-3 sm:px-5 flex flex-col md:flex-row items-start md:items-center justify-between gap-2 shadow-lg">
+        <div class="flex items-center gap-3">
+            <div class="w-10 h-10 rounded-xl bg-sky-500/20 border border-sky-400/30 flex items-center justify-center text-sky-400">
+                <i class="fa-solid fa-bolt-lightning text-lg"></i>
+            </div>
+            <div>
+                <h1 class="text-base sm:text-lg font-bold tracking-tight text-white flex items-center gap-2">
+                    Direct-Drive & Regen E-Bike Lab
+                    <span class="text-[10px] uppercase tracking-wider px-2 py-0.5 rounded-full bg-sky-500/15 text-sky-300 border border-sky-500/30">Interactive Physics</span>
+                </h1>
+                <p class="text-xs text-slate-400">Drag the crank pedal circularly to ride, test gears, hills &amp; "New Force" regenerative braking.</p>
+            </div>
+        </div>
+
+        <!-- Live Educational Physics Callout Pill -->
+        <div id="physicsCallout" class="w-full md:w-auto px-3.5 py-2 rounded-xl bg-slate-800/90 border border-slate-700/80 text-xs text-sky-200 flex items-center gap-2.5 transition-all">
+            <i id="calloutIcon" class="fa-solid fa-circle-info text-sky-400 shrink-0"></i>
+            <span id="calloutText" class="leading-snug">Grab &amp; spin the glowing pedal handle clockwise to generate power and drive the wheel!</span>
+        </div>
+    </header>
+
+    <!-- Main Interactive Simulation Canvas + Telemetry Overlay -->
+    <main class="relative flex-1 min-h-[370px] sm:min-h-[430px] schematic-bg rounded-2xl border border-slate-800 shadow-2xl overflow-hidden flex flex-col">
+        
+        <!-- Top Telemetry Bar -->
+        <div class="z-10 grid grid-cols-2 lg:grid-cols-5 gap-2 p-2.5 sm:p-3 bg-slate-950/75 backdrop-blur-md border-b border-slate-800/80">
+            
+            <!-- 1. Battery State of Charge -->
+            <div class="bg-slate-900/90 border border-slate-800 rounded-xl p-2.5 flex flex-col justify-between">
+                <div class="flex items-center justify-between text-[11px] text-slate-400 font-medium">
+                    <span><i class="fa-solid fa-battery-three-quarters text-emerald-400 mr-1"></i> BATTERY SOC</span>
+                    <span id="voltageText" class="mono text-[10px] text-slate-500">48.0V</span>
+                </div>
+                <div class="flex items-baseline justify-between my-1">
+                    <span id="socText" class="mono text-lg sm:text-xl font-bold text-emerald-400">65.0%</span>
+                    <span id="socDelta" class="mono text-[11px] text-slate-400">0.0%/s</span>
+                </div>
+                <div class="w-full h-2 bg-slate-800 rounded-full overflow-hidden">
+                    <div id="socBar" class="h-full bg-gradient-to-r from-emerald-500 to-teal-300 transition-all duration-150" style="width: 65%"></div>
+                </div>
+            </div>
+
+            <!-- 2. Power Generated vs Consumed -->
+            <div class="bg-slate-900/90 border border-slate-800 rounded-xl p-2.5 flex flex-col justify-between">
+                <div class="flex items-center justify-between text-[11px] text-slate-400 font-medium">
+                    <span><i class="fa-solid fa-plug-circle-bolt text-cyan-400 mr-1"></i> POWER FLOW</span>
+                    <span id="netWattsBadge" class="mono text-[10px] px-1.5 py-0.2 rounded bg-slate-800 text-slate-300">NET 0W</span>
+                </div>
+                <div class="grid grid-cols-2 gap-1 mt-1">
+                    <div>
+                        <div class="text-[10px] text-slate-500">GENERATED</div>
+                        <div id="genWattsText" class="mono text-sm sm:text-base font-bold text-emerald-400">+0 W</div>
+                    </div>
+                    <div class="border-l border-slate-800 pl-2">
+                        <div class="text-[10px] text-slate-500">CONSUMED</div>
+                        <div id="consWattsText" class="mono text-sm sm:text-base font-bold text-amber-400">-0 W</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 3. Wheel Speed & Cadence -->
+            <div class="bg-slate-900/90 border border-slate-800 rounded-xl p-2.5 flex flex-col justify-between">
+                <div class="flex items-center justify-between text-[11px] text-slate-400 font-medium">
+                    <span><i class="fa-solid fa-gauge-high text-sky-400 mr-1"></i> KINEMATICS</span>
+                    <span id="gearRatioText" class="mono text-[10px] text-sky-300">Ratio 1.50x</span>
+                </div>
+                <div class="grid grid-cols-2 gap-1 mt-1">
+                    <div>
+                        <div class="text-[10px] text-slate-500">WHEEL SPD</div>
+                        <div class="mono text-sm sm:text-base font-bold text-white"><span id="speedText">0.0</span> <span class="text-[10px] font-normal text-slate-400">km/h</span></div>
+                    </div>
+                    <div class="border-l border-slate-800 pl-2">
+                        <div class="text-[10px] text-slate-500">PEDAL RPM</div>
+                        <div class="mono text-sm sm:text-base font-bold text-sky-300"><span id="rpmText">0</span> <span class="text-[10px] font-normal text-slate-400">rpm</span></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 4. Motor / Dynamo Status -->
+            <div class="col-span-2 lg:col-span-2 bg-slate-900/90 border border-slate-800 rounded-xl p-2.5 flex flex-col justify-between">
+                <div class="flex items-center justify-between text-[11px] text-slate-400 font-medium">
+                    <span><i class="fa-solid fa-microchip text-purple-400 mr-1"></i> HUB MOTOR / DYNAMO STATE</span>
+                    <span id="inclineLabel" class="mono text-[10px] text-slate-400">Grade: 0% (Flat)</span>
+                </div>
+                <div class="flex items-center justify-between gap-2 mt-1">
+                    <div id="motorStatusBadge" class="inline-flex items-center gap-2 px-2.5 py-1 rounded-lg bg-slate-800 border border-slate-700 text-xs sm:text-sm font-semibold text-slate-200">
+                        <span id="motorStatusDot" class="w-2.5 h-2.5 rounded-full bg-slate-400"></span>
+                        <span id="motorStatusText">Standby / Idle</span>
+                    </div>
+                    <button id="quickChargeBtn" title="Refill or Drain Battery for testing" class="text-[11px] px-2.5 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 transition">
+                        <i class="fa-solid fa-rotate-right mr-1"></i> Reset 65%
+                    </button>
+                    <div class="text-[10px] text-slate-400 mt-1">
+                        Eff (motor/drive/regen): <span id="effText" class="mono text-slate-200">0/0/0 %</span>
+                        <span id="conservationBadge" class="ml-2 px-1.5 py-0.5 rounded bg-slate-800 text-slate-300">Conservation: OK</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Interactive 2D Bike Canvas -->
+        <div class="relative flex-1 w-full h-full min-h-[290px]" id="canvasContainer">
+            <canvas id="bikeCanvas" class="w-full h-full block cursor-grab active:cursor-grabbing touch-none"></canvas>
+    <div id="simBanner" class="hidden absolute top-2 left-1/2 -translate-x-1/2 px-4 py-2 rounded-xl bg-rose-600 text-white text-xs font-semibold shadow-lg z-20">Simulation paused — reload</div>
+            
+            <!-- Legend Overlay in Bottom-Left of Canvas -->
+            <div class="pointer-events-none absolute bottom-2.5 left-3 flex flex-wrap items-center gap-3 bg-slate-950/80 backdrop-blur-sm border border-slate-800/80 px-3 py-1.5 rounded-xl text-[11px]">
+                <span class="flex items-center gap-1.5 text-emerald-300">
+                    <span class="w-2.5 h-2.5 rounded-full bg-emerald-400 shadow-[0_0_8px_#34d399]"></span> Charging / Regen Flow
+                </span>
+                <span class="flex items-center gap-1.5 text-amber-300">
+                    <span class="w-2.5 h-2.5 rounded-full bg-amber-400 shadow-[0_0_8px_#fbbf24]"></span> Motor Assist Discharge
+                </span>
+                <span class="flex items-center gap-1.5 text-sky-300">
+                    <span class="w-2.5 h-2.5 rounded-full bg-sky-400"></span> Mechanical Chain Drive
+                </span>
+            </div>
+
+            <!-- Auto-Pedal Helper Button for convenience / accessibility -->
+            <button id="autoPedalBtn" class="absolute bottom-2.5 right-3 px-3 py-1.5 rounded-xl bg-slate-900/90 hover:bg-slate-800 border border-slate-700 text-xs font-medium text-sky-300 shadow-lg flex items-center gap-1.5 transition">
+                <i id="autoPedalIcon" class="fa-solid fa-play"></i>
+                <span id="autoPedalLabel">Auto-Pedal Demo</span>
+            </button>
+        </div>
+    </main>
+
+    <!-- Bottom Interactive Controls Deck -->
+    <section class="grid grid-cols-1 md:grid-cols-12 gap-3">
+        
+        <!-- Control 1: Drive Mode Toggle Switch (5 cols) -->
+        <div class="md:col-span-5 bg-slate-900/95 border border-slate-800 rounded-2xl p-3.5 flex flex-col justify-between shadow-lg">
+            <div class="flex items-center justify-between mb-2">
+                <span class="text-xs font-semibold uppercase tracking-wider text-slate-400">
+                    <i class="fa-solid fa-toggle-on text-sky-400 mr-1.5"></i>1. Drivetrain Mode Switch
+                </span>
+                <span id="modeTag" class="text-[11px] font-medium text-sky-400">Direct-Drive E-Bike</span>
+            </div>
+
+            <!-- 3-Way Tactile Toggle Switch -->
+            <div class="grid grid-cols-3 gap-1.5 bg-slate-950 p-1.5 rounded-xl border border-slate-800" role="group" aria-label="Drive Mode Toggle">
+                <button data-mode="hybrid" class="mode-btn active py-2 px-2 rounded-lg text-xs font-semibold transition-all flex flex-col items-center gap-1 bg-sky-500 text-slate-950 shadow">
+                    <i class="fa-solid fa-bolt text-sm"></i>
+                    <span>Direct-Drive</span>
+                </button>
+                <button data-mode="mechanical" class="mode-btn py-2 px-2 rounded-lg text-xs font-semibold transition-all flex flex-col items-center gap-1 text-slate-400 hover:text-white hover:bg-slate-900">
+                    <i class="fa-solid fa-link text-sm"></i>
+                    <span>Chain Only</span>
+                </button>
+                <button data-mode="generator" class="mode-btn py-2 px-2 rounded-lg text-xs font-semibold transition-all flex flex-col items-center gap-1 text-slate-400 hover:text-white hover:bg-slate-900">
+                    <i class="fa-solid fa-charging-station text-sm"></i>
+                    <span>Charge Stand</span>
+                </button>
+            </div>
+            <p id="modeDesc" class="text-[11px] text-slate-400 mt-2 leading-tight">
+                Pedals generate electricity to battery; hub motor drives wheel &amp; harvests regen energy.
+            </p>
+        </div>
+
+        <!-- Control 2: Clickable Gear Selector (3.5 cols -> 4 cols) -->
+        <div class="md:col-span-4 bg-slate-900/95 border border-slate-800 rounded-2xl p-3.5 flex flex-col justify-between shadow-lg">
+            <div class="flex items-center justify-between mb-2">
+                <span class="text-xs font-semibold uppercase tracking-wider text-slate-400">
+                    <i class="fa-solid fa-gear text-amber-400 mr-1.5"></i>2. Rear Sprocket Gears
+                </span>
+                <span id="gearTrait" class="text-[11px] font-medium text-amber-300">Balanced</span>
+            </div>
+
+            <div class="grid grid-cols-5 gap-1.5">
+                <button data-gear="1" class="gear-btn py-2.5 rounded-xl bg-slate-950 border border-slate-800 hover:border-slate-600 text-xs font-bold mono text-slate-300 transition">G1</button>
+                <button data-gear="2" class="gear-btn py-2.5 rounded-xl bg-slate-950 border border-slate-800 hover:border-slate-600 text-xs font-bold mono text-slate-300 transition">G2</button>
+                <button data-gear="3" class="gear-btn active py-2.5 rounded-xl bg-amber-500/20 border border-amber-400 text-xs font-bold mono text-amber-300 shadow-[0_0_12px_rgba(251,191,36,0.2)] transition">G3</button>
+                <button data-gear="4" class="gear-btn py-2.5 rounded-xl bg-slate-950 border border-slate-800 hover:border-slate-600 text-xs font-bold mono text-slate-300 transition">G4</button>
+                <button data-gear="5" class="gear-btn py-2.5 rounded-xl bg-slate-950 border border-slate-800 hover:border-slate-600 text-xs font-bold mono text-slate-300 transition">G5</button>
+            </div>
+
+            <div class="flex justify-between text-[10px] text-slate-400 mt-2">
+                <span><i class="fa-solid fa-circle-dot text-slate-500 mr-1"></i>Large Gear: High Torque</span>
+                <span>Small Gear: High Speed<i class="fa-solid fa-gauge text-slate-500 ml-1"></i></span>
+            </div>
+        </div>
+
+        <!-- Control 3: Terrain Incline & Regen Brake (3 cols) -->
+        <div class="md:col-span-3 bg-slate-900/95 border border-slate-800 rounded-2xl p-3.5 flex flex-col justify-between shadow-lg">
+            <div class="flex items-center justify-between mb-1.5">
+                <span class="text-xs font-semibold uppercase tracking-wider text-slate-400">
+                    <i class="fa-solid fa-mountain text-emerald-400 mr-1.5"></i>3. Terrain &amp; Regen
+                </span>
+                <span id="gradeBadge" class="mono text-[11px] font-bold text-slate-300">0% FLAT</span>
+            </div>
+
+            <!-- Regen Brake Slider (0-100%) -->
+            <div class="mb-2">
+                <label class="text-[10px] text-slate-400">Regen Brake: <span id="brakeLevelText">0%</span></label>
+                <input id="regenBrakeSlider" type="range" min="0" max="100" value="0" class="w-full">
+            </div>
+            <!-- Hold-to-Brake Button -->
+            <button id="regenBrakeBtn" class="brake-btn w-full py-2 px-3 rounded-xl bg-gradient-to-r from-rose-600 to-pink-600 hover:from-rose-500 hover:to-pink-500 text-white font-semibold text-xs shadow-md flex items-center justify-center gap-2 transition cursor-pointer mb-2">
+                <i class="fa-solid fa-hand"></i>
+                <span>Hold Regen Brake ("New Force")</span>
+            </button>
+            <!-- Quick 3-Preset Incline Buttons -->
+            <div class="grid grid-cols-3 gap-1.5 mb-2">
+                <button data-grade="-8" class="grade-btn py-1.5 px-1 rounded-lg bg-slate-950 border border-slate-800 hover:border-emerald-500/50 text-[11px] font-medium text-emerald-300 transition">
+                    <i class="fa-solid fa-arrow-trend-down mr-1"></i>Downhill
+                </button>
+                <button data-grade="0" class="grade-btn active py-1.5 px-1 rounded-lg bg-sky-500/20 border border-sky-400 text-[11px] font-medium text-sky-200 transition">
+                    <i class="fa-solid fa-minus mr-1"></i>Flat
+                </button>
+                <button data-grade="8" class="grade-btn py-1.5 px-1 rounded-lg bg-slate-950 border border-slate-800 hover:border-amber-500/50 text-[11px] font-medium text-amber-300 transition">
+                    <i class="fa-solid fa-arrow-trend-up mr-1"></i>Uphill
+                </button>
+            </div>
+
+
+        </div>
+
+    </section>
+
+    <script src="script.js"></script>
+</body>
+</html>
