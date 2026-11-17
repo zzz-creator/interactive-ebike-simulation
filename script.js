@@ -1342,6 +1342,8 @@
             if (gb) gb.click();
             const gr = document.querySelector('.grade-btn[data-grade="' + state.inclinePercent + '"]');
             if (gr) gr.click();
+            const gSlider = document.getElementById('gradeSlider');
+            if (gSlider) { gSlider.value = state.inclinePercent; const gt = document.getElementById('gradeSliderText'); if (gt) gt.textContent = (state.inclinePercent > 0 ? '+' : '') + state.inclinePercent + '%'; }
             setDriveMode(state.mode);
             requestAnimationFrame(animate);
         };
