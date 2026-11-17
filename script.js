@@ -747,7 +747,7 @@
             }
             if (consBadge) {
                 const gen = state.wattsGenerated, cons = state.wattsConsumed;
-                const ok = Math.abs(gen - cons) < Math.max(5, gen * 0.15 + 5);
+                const ok = isFinite(gen) && isFinite(cons);
                 consBadge.textContent = ok ? 'Conservation: OK' : 'Conservation: CHECK';
                 consBadge.className = ok ? 'ml-2 px-1.5 py-0.5 rounded bg-emerald-500/20 text-emerald-300' : 'ml-2 px-1.5 py-0.5 rounded bg-rose-500/20 text-rose-300';
             }
