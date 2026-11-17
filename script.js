@@ -58,7 +58,12 @@
 
             // Energy Flow Particles
             particles: [],
-            particleSpawnTimer: 0
+            particleSpawnTimer: 0,
+
+            // Extras
+            chainSlip: false,
+            chainSlipTimer: 0,
+            telemetryLog: []
         };
 
         // ==========================================
@@ -209,6 +214,68 @@
             if (e.key === 'ArrowDown') { const btn = document.querySelector('.grade-btn[data-grade="-8"]'); if (btn) btn.click(); }
             if (e.key === 'ArrowLeft') { const btn = document.querySelector('.grade-btn[data-grade="0"]'); if (btn) btn.click(); }
             if (/^[1-5]$/.test(e.key)) { const btn = document.querySelector('.gear-btn[data-gear="' + e.key + '"]'); if (btn) btn.click(); }
+        });
+
+        // Presets, URL state, CSV, chain slip, tour
+        function capturePreset() {
+            return { mode: state.mode, gear: state.gear, incline: state.inclinePercent, soc: state.batterySOC, autoPedal: state.autoPedal };
+        }
+        function applyPreset(p) {
+            if (!p) return;
+            state.mode = p.mode; state.gear = p.gear; state.inclinePercent = p.incline; state.batterySOC = p.soc; state.autoPedal = p.autoPedal;
+            // reflect in UI
+            const mb = document.querySelector('.mode-btn[data-mode="' + p.mode + '"]'); if (mb) mb.click();
+            const gb = document.querySelector('.gear-btn[data-gear="' + p.gear + '"]'); if (gb) gb.click();
+            const gr = document.querySelector('.grade-btn[data-grade="' + p.incline + '"]'); if (gr) gr.click();
+        }
+        for (let i = 1; i <= 3; i++) {
+            const saveBtn = document.getElementById('presetSave' + i);
+            const loadBtn = document.getElementById('presetLoad' + i);
+            if (saveBtn) saveBtn.addEventListener('click', () => { localStorage.setItem('preset' + i, JSON.stringify(capturePreset())); saveBtn.textContent = 'Saved ' + i; setTimeout(() => saveBtn.textContent = 'Save ' + i, 800); });
+            if (loadBtn) loadBtn.addEventListener('click', () => { const raw = localStorage.getItem('preset' + i); if (raw) applyPreset(JSON.parse(raw)); });
+        }
+        // Shareable URL state
+        function syncUrl() {
+            const params = new URLSearchParams();
+            params.set('mode', state.mode);
+            params.set('gear', state.gear);
+            params.set('grade', state.inclinePercent);
+            params.set('soc', state.batterySOC.toFixed(1));
+            const url = window.location.pathname + '?' + params.toString();
+            window.history.replaceState({}, '', url);
+        }
+        // load from URL on start
+        (function loadUrl() {
+            const params = new URLSearchParams(window.location.search);
+            if (params.has('mode')) state.mode = params.get('mode');
+            if (params.has('gear')) state.gear = parseInt(params.get('gear'), 10);
+            if (params.has('grade')) state.inclinePercent = parseInt(params.get('grade'), 10);
+            if (params.has('soc')) state.batterySOC = parseFloat(params.get('soc'));
+        })();
+        // sync periodically
+        setInterval(syncUrl, 2000);
+
+        // CSV export
+        const exportBtn = document.getElementById('exportCsvBtn');
+        if (exportBtn) exportBtn.addEventListener('click', () => {
+            let csv = 'time,soc,speedKmh,genW,consW\\n';
+            state.telemetryLog.forEach(r => { csv += `${r.t},${r.soc.toFixed(2)},${r.speed.toFixed(2)},${r.gen.toFixed(1)},${r.cons.toFixed(1)}\\n`; });
+            const blob = new Blob([csv], { type: 'text/csv' });
+            const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'telemetry.csv'; a.click();
+        });
+
+        // Chain slip trigger
+        const slipBtn = document.getElementById('chainSlipBtn');
+        if (slipBtn) slipBtn.addEventListener('click', () => { state.chainSlip = true; state.chainSlipTimer = 2.0; });
+
+        // Guided tour (simple alert sequence)
+        const tourBtn = document.getElementById('tourBtn');
+        if (tourBtn) tourBtn.addEventListener('click', () => {
+            alert('Step 1: Drag the glowing pedal handle clockwise to spin the crank.');
+            alert('Step 2: Switch Drivetrain Mode (Direct/Chain/Charge Stand).');
+            alert('Step 3: Change rear sprocket gears G1-G5.');
+            alert('Step 4: Set terrain (Downhill/Flat/Uphill) and hold Regen Brake.');
+            alert('Step 5: Watch telemetry, energy flow particles, and battery SOC.');
         });
 
         // Quick Battery Reset Button
@@ -362,6 +429,19 @@
         // ==========================================
         function updatePhysics(dt) {
             const gearSpec = GEARS[state.gear];
+
+            // Chain slip failure mode
+            if (state.chainSlip) {
+                state.chainSlipTimer -= dt;
+                state.wheelAngularVel *= 0.5;
+                state.motorState = 'Chain Slip!';
+                if (state.chainSlipTimer <= 0) { state.chainSlip = false; state.chainSlipTimer = 0; }
+            }
+
+            // Telemetry log (last 30s)
+            state.telemetryLog.push({ t: performance.now(), soc: state.batterySOC, speed: state.wheelSpeedKmh, gen: state.wattsGenerated, cons: state.wattsConsumed });
+            const cutoff = performance.now() - 30000;
+            while (state.telemetryLog.length && state.telemetryLog[0].t < cutoff) state.telemetryLog.shift();
 
             // Auto-pedal demo mode if toggled
             if (state.autoPedal && !state.isDraggingPedal) {
