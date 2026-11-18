@@ -1303,7 +1303,7 @@
 
             // Battery Pack Label
             ctx.fillStyle = '#34d399';
-            ctx.fillText('48V Li-Ion Battery', layout.batteryCenter.x - 18, layout.batteryCenter.y - 26);
+            ctx.fillText('48V Li-Ion-Phosphate Battery', layout.batteryCenter.x - 18, layout.batteryCenter.y - 26);
 
             // Pedal Generator Label
             ctx.fillStyle = '#38bdf8';
